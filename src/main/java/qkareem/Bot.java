@@ -84,22 +84,12 @@ public class Bot {
         }
     }
 
-    public static void play(Guild guild, AudioTrack track) {
-        connectToFirstVoiceChannel(guild.getAudioManager());
-
+    public static void play(Guild guild, VoiceChannel voiceChannel,  AudioTrack track) {
+        guild.getAudioManager().openAudioConnection(voiceChannel);
         queue(track);
     }
 
     public static void registerCommand(Command command) {
         commands.add(command);
-    }
-
-    public static void connectToFirstVoiceChannel(AudioManager audioManager) {
-        if (!audioManager.isConnected()) {
-            for (VoiceChannel voiceChannel : audioManager.getGuild().getVoiceChannels()) {
-                audioManager.openAudioConnection(voiceChannel);
-                break;
-            }
-        }
     }
 }

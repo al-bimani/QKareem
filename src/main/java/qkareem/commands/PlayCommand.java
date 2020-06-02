@@ -68,7 +68,7 @@ public class PlayCommand extends Command {
             public void trackLoaded(AudioTrack track) {
                 event.getChannel().sendMessage("Adding to queue " + track.getInfo().title).queue();
 
-                Bot.play(event.getChannel().getGuild(), track);
+                Bot.play(event.getChannel().getGuild(), event.getMember().getVoiceState().getChannel(), track);
             }
 
             @Override
