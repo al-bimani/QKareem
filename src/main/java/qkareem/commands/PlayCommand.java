@@ -1,13 +1,16 @@
 package qkareem.commands;
 
-import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+import org.json.JSONObject;
+
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import qkareem.Bot;
 import qkareem.classes.Command;
@@ -18,46 +21,86 @@ import qkareem.util.ArgsStream;
 
 public class PlayCommand extends Command {
 
-    public PlayCommand() throws UnsupportedEncodingException {
-        super(
-            "play",
-            "%splay <surah number> <\"reciter name\">\nnote: escape the reciter name with double quotes",
-            "%splay 3 " + new String("يوسف بن نوح أحمد".getBytes(), "UTF-8"),
-            "plays specified surah with specified reciter voice"
-        );
+    private static Surah surah = null;
+    private static Reciter reciter = null;
+
+    public PlayCommand(JSONObject commandData) {
+        super(commandData);
     }
 
     @Override
     public void exec(GuildMessageReceivedEvent event, ArgsStream args) {
 
+        if (args.peek() == null) {
+            event.getChannel().sendMessage(String.format(this.usage, Bot.prefix, Bot.prefix)).queue();
+            return;
+        }
+        String surahName = args.next().value;
 
-        if (!args.peek().value.chars().allMatch(Character::isDigit)) 
-            return; // TODO: send usage
-        
-        int surahId = Integer.parseInt(args.next().value);
-        if (surahId <= 0)
-            return; // TODO: send usage
-
+        if (args.peek() == null) {
+            event.getChannel().sendMessage(String.format(this.usage, Bot.prefix, Bot.prefix)).queue();
+            return;
+        }
         String reciterName = args.next().value;
-        event.getChannel().sendMessage(reciterName).queue();
-        if (reciterName.isEmpty())
-            return; // TODO: send usage
 
-        Reciter reciter = Bot.qMp3.getReciter(reciterName);
-        if (reciter == null) {
-            event.getChannel().sendMessage("reciter: " + reciterName + " not Found").queue();
+        String rewaya = "";
+        if (args.peek() != null) {
+            rewaya = args.next().value;
+        }
+
+        if (args.peek() != null) {
+            event.getChannel().sendMessage(String.format(Bot.locale.get("INVLD_ARGS"), Bot.prefix, this.name)).queue();
             return;
         }
 
-        Surah surah = Bot.qMp3.getReciterSurahById(reciter, surahId);
-        if (surah == null) {
-            event.getChannel().sendMessage("Surah with id: " + surahId + "for reciter: " + reciterName + " not Found")
-                    .queue();
+        ArrayList<Reciter> reciterSearchResults = Bot.qMp3.searchReciters(reciterName, 55);
+        if (reciterSearchResults.size() == 0) {
+            event.getChannel().sendMessage(String.format(Bot.locale.get("REC_SER_NO_RES"), reciterName)).queue();
             return;
         }
+        reciter = reciterSearchResults.get(0);
 
-        String mp3Url = reciter.getSurahMp3Url(surahId);
-        event.getChannel().sendMessage(mp3Url).queue();
+        ArrayList<Surah> surasSearchResult = Bot.qMp3.searchSuras(surahName, 55);
+        if (surasSearchResult.size() == 0) {
+            event.getChannel().sendMessage(String.format(Bot.locale.get("SUR_SER_NO_RES"), surahName)).queue();
+            return;
+        }
+        surah = surasSearchResult.get(0);
+
+        Reciter surahReciter = null;
+        if (rewaya.isEmpty()) { // if no rewaya specified search for any avaliable
+            for (Reciter _reciter : reciterSearchResults) {
+                if (_reciter.name.equals(reciter.name) && _reciter.hasSurah(surah.id)) { // same name but diffrent
+                                                                                         // rewaya
+                    surahReciter = _reciter;
+                    break;
+                } else
+                    surahReciter = null;
+            }
+        } else {
+            for (Reciter _reciter : reciterSearchResults) {
+                if (_reciter.name.equals(reciter.name) && _reciter.recitesRewaya(rewaya)
+                        && _reciter.hasSurah(surah.id)) {
+                    surahReciter = _reciter;
+                    break;
+                } else
+                    surahReciter = null;
+            }
+        }
+
+        if (surahReciter == null) {
+            if (rewaya.isEmpty())
+                event.getChannel()
+                        .sendMessage(String.format(Bot.locale.get("REC_SUR_NO_RES"), surah.name, reciter.name)).queue();
+            else
+                event.getChannel().sendMessage(
+                        String.format(Bot.locale.get("REC_SUR_WITH_REW_NO_RES"), surah.name, reciter.name, rewaya))
+                        .queue();
+            return;
+        } else
+            reciter = surahReciter;
+
+        String mp3Url = reciter.getSurahMp3Url(surah.id);
 
         Guild guild = event.getChannel().getGuild();
         guild.getAudioManager().setSendingHandler(new AudioPlayerSendHandler(Bot.player));
@@ -66,15 +109,18 @@ public class PlayCommand extends Command {
 
             @Override
             public void trackLoaded(AudioTrack track) {
-                event.getChannel().sendMessage("Adding to queue " + track.getInfo().title).queue();
-
-                Bot.play(event.getChannel().getGuild(), event.getMember().getVoiceState().getChannel(), track);
+                VoiceChannel vchannel = event.getMember().getVoiceState().getChannel();
+                if (vchannel == null)
+                    return;
+                event.getChannel()
+                        .sendMessage(
+                                String.format(Bot.locale.get("QUEUE_ADD"), surah.name, reciter.name, reciter.rewaya))
+                        .queue();
+                Bot.play(event.getChannel().getGuild(), vchannel, track);
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
-                // TODO Auto-generated method stub
-
             }
 
             @Override
@@ -84,8 +130,7 @@ public class PlayCommand extends Command {
 
             @Override
             public void loadFailed(FriendlyException exception) {
-                // TODO Auto-generated method stub
-
+                event.getChannel().sendMessage("Could not play: " + exception.getMessage()).queue();
             }
         };
         Bot.playerManager.loadItem(mp3Url, onload);

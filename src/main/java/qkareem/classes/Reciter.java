@@ -1,36 +1,35 @@
 package qkareem.classes;
 
-import java.util.ArrayList;
-
 import org.json.JSONObject;
+
+import me.xdrop.fuzzywuzzy.FuzzySearch;
 
 public class Reciter {
     public int id;
     public String name;
-    public String Server;
+    public String server;
     public String rewaya;
     public int count;
     public String letter;
-    public ArrayList<Integer> surahsId = new ArrayList<Integer>();
+    public String suras;
 
     public Reciter(JSONObject reciterJson) {
         this.id = reciterJson.getInt("id");
-        this.name = reciterJson.getString("name") + "";
-        this.Server = reciterJson.getString("Server");
+        this.name = reciterJson.getString("name");
+        this.server = reciterJson.getString("server");
         this.rewaya = reciterJson.getString("rewaya");
         this.count = reciterJson.getInt("count");
         this.letter = reciterJson.getString("letter");
-
-        for (Object surah : reciterJson.getJSONArray("suras")) {
-            this.surahsId.add(Integer.parseInt(surah.toString()));
-        }
+        this.suras = ","+reciterJson.getString("suras")+",";
     }
 
     public boolean hasSurah(int surahId) {
-        for (int id : this.surahsId) {
-            if (id == surahId) return true;
-        }
-        return false;
+        return this.suras.indexOf(","+surahId+",") >= 0;
+    }
+
+    public boolean recitesRewaya(String rewaya) {
+        System.out.println(FuzzySearch.partialRatio(rewaya, this.rewaya) + ": " + rewaya);
+        return FuzzySearch.partialRatio(rewaya, this.rewaya) >= 100;
     }
 
     public String getSurahMp3Url(int surahId) {
@@ -38,6 +37,6 @@ public class Reciter {
         while (surahName.length() < 3) {
             surahName = "0" + surahName;
         }
-        return this.Server + "/" + surahName + ".mp3";
+        return this.server + "/" + surahName + ".mp3";
     }
 }

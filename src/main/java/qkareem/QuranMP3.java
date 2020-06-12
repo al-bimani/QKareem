@@ -1,11 +1,17 @@
 package qkareem;
 
-import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import org.json.JSONObject;
+
+import me.xdrop.fuzzywuzzy.FuzzySearch;
+
 import org.json.JSONArray;
 
 import qkareem.classes.Reciter;
@@ -13,56 +19,110 @@ import qkareem.classes.Surah;
 
 public class QuranMP3 {
 
-    public ArrayList<Surah> surahs = new ArrayList<Surah>();
-    public ArrayList<Reciter> reciters = new ArrayList<Reciter>();
+    public List<Surah> suras = new ArrayList<Surah>();
+    public List<Reciter> reciters = new ArrayList<Reciter>();
 
-    public QuranMP3() {
-        try {
-            String source;
+    public QuranMP3() throws Exception {
+        String source;
+        Path surasPath = Paths.get(String.format("json/%s/suras.json", Bot.lang));
+        Path recitersPath = Paths.get(String.format("json/%s/reciters.json", Bot.lang));
 
-            source = new String(Files.readAllBytes(Paths.get("json/surahs.json")), "UTF-8");
-            JSONArray surahsListJson = new JSONArray(source);
+        Bot.logger.info("Loading suras from {}", surasPath.toString());
+        source = new String(Files.readAllBytes(surasPath), "UTF-8");
+        JSONArray surasListJson = new JSONArray(source);
 
-            source = new String(Files.readAllBytes(Paths.get("json/reciters.json")), "UTF-8");
-            JSONArray recitersListJson = new JSONArray(source);
+        Bot.logger.info("Loading reciters from {}", recitersPath.toString());
+        source = new String(Files.readAllBytes(recitersPath), "UTF-8");
+        JSONArray recitersListJson = new JSONArray(source);
 
-            for (Object surahJson : surahsListJson) {
-                Surah surah = new Surah((JSONObject) surahJson);
-                this.surahs.add(surah);
-            }
+        for (Object surahJson : surasListJson)
+            this.suras.add(new Surah((JSONObject) surahJson));
 
-            for (Object reciterJson : recitersListJson) {
-                Reciter reciter = new Reciter((JSONObject) reciterJson);
-                reciters.add(reciter);
-            }
+        for (Object reciterJson : recitersListJson)
+            reciters.add(new Reciter((JSONObject) reciterJson));
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public final Reciter getReciter(String reciterName) {
         Reciter reciter = null;
         for (int i = 0; i < this.reciters.size(); i++) {
             reciter = this.reciters.get(i);
-            if (reciter.name.strip().equals(reciterName)) {
+            if (reciter.name.equals(reciterName))
                 break;
-            } else reciter = null;
+            else
+                reciter = null;
         }
         return reciter;
     }
 
-    public final Surah getReciterSurahById(Reciter reciter, int surahId) {
-        Surah _surah = null;
-        for (Surah surah : this.surahs) {
-            if (surah.id == surahId) {
-                if (reciter.hasSurah(surah.id))
-                    _surah = surah;
-                else
-                    _surah = null;
-                break;
+    public ArrayList<Reciter> searchReciters(String query, int wantPrecent) {
+        ArrayList<Reciter> results = new ArrayList<>();
+
+        if (query.chars().allMatch(Character::isDigit)) {
+            int id = Integer.parseInt(query);
+            for (Reciter reciter : reciters) {
+                if (reciter.id == id) {
+                    results.add(reciter);
+                }
             }
+            return results;
         }
-        return _surah;
+
+        Collections.sort(reciters, new Comparator<Reciter>() {
+            @Override
+            public int compare(Reciter a, Reciter b) {
+
+                return (FuzzySearch.partialRatio(b.name, query) * FuzzySearch.tokenSortPartialRatio(b.name, query))
+                        - (FuzzySearch.partialRatio(a.name, query) * FuzzySearch.tokenSortPartialRatio(a.name, query));
+            }
+        });
+
+        for (Reciter reciter : reciters) {
+            int score = (FuzzySearch.partialRatio(reciter.name, query)
+                    * FuzzySearch.tokenSortPartialRatio(reciter.name, query)) / 100;
+            if (score < wantPrecent || results.size() >= 5 || results.contains(reciter))
+                continue;
+            results.add(reciter);
+        }
+
+        if (results.size() < 1)
+            results.add(reciters.get(0));
+
+        return results;
+    }
+
+    public ArrayList<Surah> searchSuras(String query, int wantPrecent) {
+        ArrayList<Surah> results = new ArrayList<>();
+
+        if (query.chars().allMatch(Character::isDigit)) {
+            int id = Integer.parseInt(query);
+            for (Surah surah : suras) {
+                if (surah.id == id) {
+                    results.add(surah);
+                }
+            }
+            return results;
+        }
+
+        Collections.sort(suras, new Comparator<Surah>() {
+            @Override
+            public int compare(Surah a, Surah b) {
+                return (FuzzySearch.partialRatio(b.name, query) * (FuzzySearch.tokenSortRatio(b.name, query) * 100))
+                        - (FuzzySearch.partialRatio(a.name, query) * (FuzzySearch.tokenSortRatio(a.name, query) * 100));
+            }
+        });
+
+        for (Surah surah : suras) {
+            int score = (FuzzySearch.partialRatio(surah.name, query)
+                    * (FuzzySearch.tokenSortRatio(surah.name, query) * 100)) / 100;
+            if (score < wantPrecent || results.size() >= 5 || results.contains(surah))
+                continue;
+            results.add(surah);
+        }
+
+        if (results.size() < 1)
+            results.add(suras.get(0));
+
+        return results;
     }
 }

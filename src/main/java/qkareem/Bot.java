@@ -3,8 +3,12 @@
  */
 package qkareem;
 
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -15,21 +19,26 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.managers.AudioManager;
 import qkareem.classes.Command;
+import qkareem.commands.HelpCommand;
 import qkareem.commands.PlayCommand;
+import qkareem.commands.SearchCommand;
 import qkareem.commands.StopCommand;
-import qkareem.listeners.GuildMessageReceivedListener;
+import qkareem.listeners.BotListener;
 import qkareem.listeners.PlayerListener;
 
 public class Bot {
 
-    private JDA client;
+    private static JDA client;
     private JDABuilder builder;
     public static QuranMP3 qMp3;
 
@@ -38,22 +47,74 @@ public class Bot {
     public static AudioPlayer player;
 
     public static String prefix;
-    private static String token;
-    public static ArrayList<Command> commands = new ArrayList<Command>();
+    public static String main_guild_id;
+    public static String token;
+    public static String lang;
 
-    public static void main(String[] args) throws Exception {
-        loadProps();
-        new Bot();
-        Bot.registerCommand(new PlayCommand());
-        Bot.registerCommand(new StopCommand());
+    public static Logger logger = LoggerFactory.getLogger("Startup");
+
+    public static ArrayList<Command> commands = new ArrayList<Command>();
+    public static JSONObject commandsData;
+
+    public static HashMap<String, String> locale = new HashMap<>();
+
+    public static void main(String[] args) {
+        logger.info("Loading config.");
+        try {
+            loadProps();
+        } catch (Exception e) {
+            logger.error("Could not load config", e);
+            return;
+        }
+
+        logger.info("Config loaded successfully.");
+
+        logger.info("Loading new bot");
+        try {
+            new Bot();
+        } catch (Exception e) {
+            logger.error("Could not load new bot.", e);
+            return;
+        }
+
+
+
+        logger.info("Loading locale.");
+        try {
+            loadLocale();
+        } catch (Exception e) {
+            logger.error("Could not load locale", e);
+            return;
+        }
+        logger.info("Commands loaded successfully.");
+
+        logger.info("Loading commands.");
+        try {
+            loadCommandsData();
+            Bot.registerCommand(new PlayCommand(commandsData.getJSONObject("play")));
+            logger.debug("PlayCommand loaded.");
+            Bot.registerCommand(new SearchCommand(commandsData.getJSONObject("search")));
+            logger.debug("SearchCommand loaded.");
+            Bot.registerCommand(new StopCommand(commandsData.getJSONObject("stop")));
+            logger.debug("StopCommand loaded.");
+            Bot.registerCommand(new HelpCommand(commandsData.getJSONObject("help")));
+            logger.debug("HelpCommand loaded.");
+        } catch (Exception e) {
+            logger.error("Could not load commands", e);
+            return;
+        }
+        logger.info("Commands loaded successfully.");
+
+        logger.info("Bot loaded successfully.");
     }
 
     private Bot() throws Exception {
+
         init();
         builder = JDABuilder.createDefault(token);
 
-        builder.setActivity(Activity.watching("the moon"));
-        builder.addEventListeners(new GuildMessageReceivedListener());
+        builder.setActivity(Activity.watching("a child smiling"));
+        builder.addEventListeners(new BotListener());
 
         client = builder.build();
         client.awaitReady();
@@ -70,12 +131,41 @@ public class Bot {
     }
 
     private static void loadProps() throws Exception {
-        FileInputStream configFile = new FileInputStream("config.txt");
-        Properties props = new Properties(System.getProperties());
-        props.load(configFile);
-        System.setProperties(props);
-        prefix = System.getProperty("prefix");
-        token = System.getProperty("token");
+        String source;
+        Path propsPath = Paths.get("config.txt");
+        Bot.logger.info("Loading props data from {}", propsPath.toString());
+        source = new String(Files.readAllBytes(propsPath), "UTF-8");
+
+        Properties props = new Properties();
+        props.load(new ByteArrayInputStream(source.getBytes()));
+        prefix = props.getProperty("prefix");
+        main_guild_id = props.getProperty("main_guild_id");
+        if (main_guild_id.isEmpty()) throw new Exception("main_guild_id is required");
+        token = props.getProperty("token");
+        if (token.isEmpty()) throw new Exception("token is required");
+        lang = props.getProperty("lang");
+        if (lang.isEmpty()) throw new Exception("lang is required");
+    }
+
+    private static void loadCommandsData() throws Exception {
+        String source;
+        Path commandsPath = Paths.get(String.format("json/%s/commands.json", lang));
+
+        Bot.logger.info("Loading commands data from {}", commandsPath.toString());
+        source = new String(Files.readAllBytes(commandsPath), "UTF-8");
+        commandsData = new JSONObject(source);
+    }
+
+    private static void loadLocale() throws Exception {
+        String source;
+        Path localePath = Paths.get(String.format("json/%s/locale.json", lang));
+
+        Bot.logger.info("Loading locale data from {}", localePath.toString());
+        source = new String(Files.readAllBytes(localePath), "UTF-8");
+        JSONObject localeJson = new JSONObject(source);
+        localeJson.keySet().forEach(key -> {
+            locale.put(key, localeJson.getString(key));
+        });
     }
 
     public static void queue(AudioTrack track) {
@@ -84,12 +174,20 @@ public class Bot {
         }
     }
 
-    public static void play(Guild guild, VoiceChannel voiceChannel,  AudioTrack track) {
+    public static void play(Guild guild, VoiceChannel voiceChannel, AudioTrack track) {
         guild.getAudioManager().openAudioConnection(voiceChannel);
         queue(track);
     }
 
     public static void registerCommand(Command command) {
+        if (commands.contains(command)) {
+            logger.warn("command \"%s\" already registered", command.name);
+            return;
+        }
         commands.add(command);
+    }
+
+    public static JDA getClient() {
+        return client;
     }
 }

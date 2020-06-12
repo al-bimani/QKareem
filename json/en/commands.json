@@ -1,0 +1,26 @@
+{
+    "play": {
+        "name": "play",
+        "usage": "`%splay <reciter> <surah> <rewaya>`",
+        "example": "`%splay Maryam 'Yousef Noah'`, `%splay Al-Hajj Al-Minshawi hafs`, `%splay 'Al-Imran' Al-Ajmy`",
+        "description": "This command plays a specific Surah with a specific reciter, if any"
+    },
+    "search": {
+        "name": "search",
+        "usage": "`%ssearch <topic> <query>`",
+        "example": "`%ssearch reciters Al-Ajmy`, `%ssearch reciters Al-Minshawi`, `%ssearch suras Al-Hajj`\n",
+        "description": "Searches for a query in the specified field (reciters, suras)"
+    },
+    "stop": {
+        "name": "stop",
+        "usage": "`%sstop`",
+        "example": "`%sstop`",
+        "description": "Stops recitation of the current Surah"
+    },
+    "help": {
+        "name": "help",
+        "usage": "`%shelp`",
+        "example": "`%shelp`",
+        "description": "Introduces you to commands and how to use them"
+    }
+}

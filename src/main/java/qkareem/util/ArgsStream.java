@@ -52,14 +52,25 @@ public class ArgsStream {
         return result;
     }
 
+    public void skipWhitespaces() {
+        read(new Predicate() {
+            @Override
+            public boolean check(char ch) {
+                return Character.isWhitespace(ch);
+            }
+        });
+    }
+
     public Arg readNext() {
         String value, type;
+        skipWhitespaces();
         if (_inst.eof())
             return null;
         char ch = _inst.peek();
         if (ch == '"' || ch == '\'') {
             value = readEscaped(ch);
             type = "escaped";
+            _inst.next();
         } else {
             value = read(new Predicate() {
                 @Override
@@ -68,7 +79,6 @@ public class ArgsStream {
                 }
             });
             type = "plain";
-            _inst.next(); // skip whitespace
         }
 
         return new Arg(type, value);

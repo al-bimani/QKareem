@@ -1,0 +1,19 @@
+{
+    "RECITERS": "reciters",
+    "REC_SER_NO_RES": "no reciter found.",
+    "SURAS": "suras",
+    "INVLD_SER_TOPIC": "I can't recognise the search field. Make sure the command and topic are written correctly.",
+    "INVLD_ARGS": "The number of arguments is incorrect, Make sure you type the command the correct way \n use `%shelp %s` for more information",
+    "SUR_SER_NO_RES": "not surah with name that like found",
+    "REC_SUR_NO_RES": "not surah with name that like found for reciter %s",
+    "REC_SUR_WITH_REW_NO_RES": "no rewaya with that name like found for surah %s for reciter %s",
+    "QUEUE_ADD": "successfully added surah %s with %s's recitation using %s.",
+    "HELP_MSG_TITLE": "Help for commands\n",
+    "CMD_HELP_MSG_TITLE": "Help for command %s\n",
+    "DESC": "**Description**: **%s**\n",
+    "USAGE": "**Usage**: **%s**\n",
+    "EXAMP": "**Example**: **%s**\n",
+    "NO_SUC_CMD": "**no command with that name like.**`%s`**",
+    "MRE_INF": "for more information\nUse **`%s%s <command>`**",
+    "NAME": "**Name**: %s"
+}
