@@ -30,6 +30,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import qkareem.classes.Command;
 import qkareem.commands.HelpCommand;
+import qkareem.commands.ListCommand;
 import qkareem.commands.PlayCommand;
 import qkareem.commands.SearchCommand;
 import qkareem.commands.StopCommand;
@@ -98,7 +99,9 @@ public class Bot {
             Bot.registerCommand(new StopCommand(commandsData.getJSONObject("stop")));
             logger.debug("StopCommand loaded.");
             Bot.registerCommand(new HelpCommand(commandsData.getJSONObject("help")));
-            logger.debug("HelpCommand loaded.");
+            logger.debug("ListCommand loaded.");
+            Bot.registerCommand(new ListCommand(commandsData.getJSONObject("list")));
+            logger.debug("ListCommand loaded.");
         } catch (Exception e) {
             logger.error("Could not load commands", e);
             return;
