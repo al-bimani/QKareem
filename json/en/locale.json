@@ -15,5 +15,9 @@
     "EXAMP": "**Example**: **%s**\n",
     "NO_SUC_CMD": "**no command with that name like.**`%s`**",
     "MRE_INF": "for more information\nUse **`%s%s <command>`**",
-    "NAME": "**Name**: %s"
+    "NAME": "**Name**: %s",
+    "REC_LST": "reciters [%s/%s]",
+    "PAG_MST_STR": "page number must be a natural number",
+    "PAG_NOT_FND": "no page found with that number.",
+    "SUR_LST": "suras [%s/%s]"
 }

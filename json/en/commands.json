@@ -8,7 +8,7 @@
     "search": {
         "name": "search",
         "usage": "`%ssearch <topic> <query>`",
-        "example": "`%ssearch reciters Al-Ajmy`, `%ssearch reciters Al-Minshawi`, `%ssearch suras Al-Hajj`\n",
+        "example": "`%ssearch reciters Al-Ajmy`, `%ssearch reciters Al-Minshawi`, `%ssearch suras Al-Hajj`",
         "description": "Searches for a query in the specified field (reciters, suras)"
     },
     "stop": {
@@ -16,6 +16,12 @@
         "usage": "`%sstop`",
         "example": "`%sstop`",
         "description": "Stops recitation of the current Surah"
+    },
+    "list": {
+        "name": "list",
+        "usage": "%slist <topic>",
+        "example": "`%slist suras 3`, `%slist reciters`",
+        "description": "lists avalibale suras or reciters"
     },
     "help": {
         "name": "help",
