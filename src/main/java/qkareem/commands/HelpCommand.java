@@ -40,7 +40,7 @@ public class HelpCommand extends Command {
                 helpMessage += String.format("%s\n%s\n\n", String.format(Bot.locale.get("NAME"), command.name),
                         String.format(Bot.locale.get("DESC"), command.description));
             }
-            helpMessage += String.format(Bot.locale.get("MRE_INF"), this.name, Bot.prefix);
+            helpMessage += String.format(Bot.locale.get("MRE_INF"),  Bot.prefix, this.name);
             embed.setDescription(helpMessage);
         }
         event.getChannel().sendMessage(embed.build()).queue();
