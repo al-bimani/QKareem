@@ -32,6 +32,8 @@ public class BotListener extends ListenerAdapter {
             return;
 
         args = new ArgsStream(content.replace(prefix, ""));
+        if (args.peek() == null)
+            return;
         commandName = args.next().value;
         for (Command botCommand : Bot.commands) {
             if (botCommand.getName().equals(commandName)) {
