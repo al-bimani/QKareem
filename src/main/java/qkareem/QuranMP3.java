@@ -41,6 +41,12 @@ public class QuranMP3 {
         for (Object reciterJson : recitersListJson)
             reciters.add(new Reciter((JSONObject) reciterJson));
 
+        this.reciters.sort(new Comparator<Reciter>() {
+            @Override
+            public int compare(Reciter o1, Reciter o2) {
+                return o1.id - o2.id;
+            }
+        });
     }
 
     public final Reciter getReciter(String reciterName) {
