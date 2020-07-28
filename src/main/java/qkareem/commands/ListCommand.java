@@ -35,13 +35,12 @@ public class ListCommand extends Command {
             int pageNumber = Integer.parseInt(pageStr) - 1;
             List<List<Reciter>> chunks = ListUtils.partition(Bot.qMp3.reciters, 10);
 
-            List<Reciter> page = chunks.get(pageNumber);
-
-            if (page.isEmpty()) {
+            if (pageNumber >= chunks.size()) {
                 event.getChannel().sendMessage(String.format(Bot.locale.get("PAG_NOT_FND"))).queue();
                 return;
             }
 
+            List<Reciter> page = chunks.get(pageNumber);
             EmbedBuilder embed = new EmbedBuilder();
             embed.setAuthor(String.format(Bot.locale.get("REC_LST"), pageStr, chunks.size()));
             String pageRepr = "";
@@ -61,13 +60,12 @@ public class ListCommand extends Command {
             int pageNumber = Integer.parseInt(pageStr) - 1;
             List<List<Surah>> chunks = ListUtils.partition(Bot.qMp3.suras, 10);
 
-            List<Surah> page = chunks.get(pageNumber);
-
-            if (page.isEmpty()) {
+            if (pageNumber >= chunks.size()) {
                 event.getChannel().sendMessage(String.format(Bot.locale.get("PAG_NOT_FND"))).queue();
                 return;
             }
 
+            List<Surah> page = chunks.get(pageNumber);
             EmbedBuilder embed = new EmbedBuilder();
             embed.setAuthor(String.format(Bot.locale.get("SUR_LST"), pageStr, chunks.size()));
             String pageRepr = "";
