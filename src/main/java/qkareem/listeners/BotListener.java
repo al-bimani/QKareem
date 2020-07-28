@@ -28,7 +28,7 @@ public class BotListener extends ListenerAdapter {
         if (event.getAuthor().isBot() || event.isWebhookMessage())
             return;
 
-        if (!content.substring(0, prefix.length()).equals(prefix))
+        if (content.indexOf(prefix) != 0)
             return;
 
         args = new ArgsStream(content.replace(prefix, ""));
