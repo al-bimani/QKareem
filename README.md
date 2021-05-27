@@ -34,4 +34,4 @@ where `1` is chapter id and `'yousef noah'` reciter name esacped with `"`
 use `Q.help` for more information.  
 
 use this bot at your own risk i'm not responsiable for any bad use of this bot.
-i appreciate your help if you want to contribute in this project, i'm avaliable on discord: `Ahlin Chan#0630`
+i appreciate your help if you want to contribute in this project, i'm avaliable on discord: `Ahlin Chan#4149`
